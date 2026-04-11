@@ -4,6 +4,7 @@ export interface AIInsight {
   type: 'info' | 'warning' | 'success';
   message: string;
   recommendation?: string;
+  icon?: any;
 }
 
 export function calculateInsights(expenses: Expense[]): AIInsight[] {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useTransition, useState, useMemo } from 'react';
-import { Trash2, ShoppingTag, Calendar, CreditCard, Layers, Filter, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Trash2, ShoppingBag, Calendar, CreditCard, Layers, Filter, TrendingUp, TrendingDown, Clock } from 'lucide-react';
 import { deleteExpense } from '../app/actions';
 import { Expense } from '../lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
