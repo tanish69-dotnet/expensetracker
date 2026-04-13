@@ -62,6 +62,11 @@ export default function Hero() {
             </motion.button>
           </div>
 
+          <div className="flex items-center gap-2 text-[10px] font-mono text-gray-700 px-1 justify-center lg:justify-start">
+             <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded uppercase">Press ⌘K</span>
+             <span>to open the GSD Execution HUD</span>
+          </div>
+
           <div className="flex items-center gap-8 pt-4 justify-center lg:justify-start opacity-40">
             <div className="flex items-center gap-2 font-black italic tracking-tighter">
                <Shield size={16} /> SECURE

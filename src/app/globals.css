@@ -1,65 +1,68 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy-dark: #0A0A0F;
+  --color-navy-dark: #0a0a0f;
   --font-sans: 'Inter', 'Geist', sans-serif;
+  --color-primary-start: #3b82f6;
+  --color-primary-end: #8b5cf6;
 }
 
 :root {
-  --background: #0A0A0F;
+  --background: #0a0a0f;
   --foreground: #ffffff;
+  --primary-gradient: linear-gradient(to bottom right, var(--color-primary-start), var(--color-primary-end));
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  min-height: 100vh;
   overflow-x: hidden;
+  background-attachment: fixed;
 }
 
 /* Premium Glassmorphism */
 .glass {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-dark {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Glow Effects */
-.glow-card:hover {
-  box-shadow: 0 0 25px rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.3);
+/* Ultra-Glass */
+.ultra-glass {
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
 }
 
-/* Progress Bar animation */
-@keyframes progress-shine {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(100%); }
+/* Noise Texture Overlay */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
 }
 
-.shine-effect {
-  position: relative;
-  overflow: hidden;
+/* Glow effects */
+.hover-glow {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-.shine-effect::after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  animation: progress-shine 2s infinite;
-}
-
-/* Selection color */
-::selection {
-  background: rgba(59, 130, 246, 0.3);
-  color: white;
+.hover-glow:hover {
+  box-shadow: 0 0 40px rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
 }

@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import Summary from '@/components/Summary';
 import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseList from '@/components/ExpenseList';
 import AIAdvisor from '@/components/AIAdvisor';
-import { getExpenses, getBudget } from '../actions';
-import { LayoutDashboard, LogOut, Sparkles, TrendingUp, PieChart as PieIcon, Target } from 'lucide-react';
-import { motion, Variants } from 'framer-motion';
+import { getExpenses, getBudget, resetData } from '../actions';
+import { LayoutDashboard, LogOut, Sparkles, TrendingUp, PieChart as PieIcon, RefreshCw, Filter } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { Expense } from '@/lib/types';
 import Link from 'next/link';
+import Summary from '@/components/Summary';
 
 // Dynamically import charts for hydration safety
 const SpendingChart = dynamic(() => import('@/components/dashboard/SpendingChart'), { ssr: false });
@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState(1000);
   const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<'Today' | 'Week' | 'Month'>('Month');
 
   const refreshData = async () => {
     const [expensesData, budgetData] = await Promise.all([
@@ -55,16 +56,35 @@ export default function Dashboard() {
     refreshData().then(() => setIsLoading(false));
   }, []);
 
-  const total = expenses.reduce((acc: number, curr: Expense) => acc + curr.amount, 0);
+  const handleReset = async () => {
+    if (confirm('Are you sure you want to reset all financial data?')) {
+      await resetData();
+      await refreshData();
+    }
+  };
+
+  const filteredExpenses = React.useMemo(() => {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    return expenses.filter(e => {
+      if (filter === 'Today') return e.date === today;
+      if (filter === 'Week') return e.date >= sevenDaysAgo;
+      return true; // Month (all in the current fetch context)
+    });
+  }, [expenses, filter]);
+
+  const total = filteredExpenses.reduce((acc: number, curr: Expense) => acc + curr.amount, 0);
 
   return (
-    <main className="min-h-screen bg-transparent text-white selection:bg-blue-500/30 overflow-x-hidden">
+    <main className="min-h-screen bg-transparent text-white selection:bg-blue-500/30">
 
       <motion.div 
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 max-w-6xl mx-auto px-6 py-12 md:py-20 space-y-10"
+        className="relative z-10 max-w-6xl mx-auto px-6 py-12 md:py-20 space-y-16"
       >
         {/* Header */}
         <motion.header variants={itemVariants} className="flex items-center justify-between">
@@ -77,25 +97,52 @@ export default function Dashboard() {
                    Strategic Dashboard
                    <Sparkles className="text-blue-400" size={16} />
                 </h2>
-                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">Expanse Intelligence v1.3.2</p>
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">Expanse Intelligence v2.4.1</p>
              </div>
           </div>
-          <Link href="/">
+          <div className="flex items-center gap-4">
              <motion.button 
                whileHover={{ scale: 1.05 }}
                whileTap={{ scale: 0.95 }}
-               className="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white bg-white/5 px-4 py-2 rounded-xl border border-white/5 transition-all"
+               onClick={handleReset}
+               className="p-2.5 bg-red-500/10 text-red-400 rounded-xl border border-red-500/20 hover:bg-red-500/20 transition-all"
              >
-               <LogOut size={14} /> Exit to Terminal
+               <RefreshCw size={16} />
              </motion.button>
-          </Link>
+             <Link href="/">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white bg-white/5 px-4 py-2 rounded-xl border border-white/5 transition-all"
+                >
+                  <LogOut size={14} /> Exit
+                </motion.button>
+             </Link>
+          </div>
         </motion.header>
+
+        {/* Time Filter Toggle */}
+        <motion.div variants={itemVariants} className="flex items-center justify-center">
+           <div className="flex p-1 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md">
+              {(['Today', 'Week', 'Month'] as const).map(option => (
+                <button
+                  key={option}
+                  onClick={() => setFilter(option)}
+                  className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                    filter === option ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+           </div>
+        </motion.div>
 
         {/* Top Feature Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
            <motion.div variants={itemVariants} className="space-y-8">
               <Summary total={total} />
-              <AIAdvisor expenses={expenses} />
+              <AIAdvisor expenses={filteredExpenses} />
            </motion.div>
            
            <motion.div variants={itemVariants}>
@@ -110,7 +157,7 @@ export default function Dashboard() {
                  <TrendingUp size={14} className="text-blue-500" />
                  <h3 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em]">Spending Trends</h3>
               </div>
-              <SpendingChart expenses={expenses} />
+              <SpendingChart expenses={filteredExpenses} />
            </motion.section>
 
            <motion.section variants={itemVariants} className="space-y-4">
@@ -118,7 +165,7 @@ export default function Dashboard() {
                  <PieIcon size={14} />
                  <h3 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em]">Category Impact</h3>
               </div>
-              <CategoryPie expenses={expenses} />
+              <CategoryPie expenses={filteredExpenses} />
            </motion.section>
         </div>
 
@@ -129,11 +176,6 @@ export default function Dashboard() {
 
         {/* Add Transaction FAB/Modal */}
         <ExpenseForm onRefresh={refreshData} />
-
-        {/* Footer */}
-        <motion.footer variants={itemVariants} className="pt-20 pb-10 text-center">
-          <p className="text-[10px] text-gray-800 font-bold uppercase tracking-[0.5em]">Secure Ledger Mode Active</p>
-        </motion.footer>
       </motion.div>
     </main>
   );

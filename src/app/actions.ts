@@ -68,3 +68,15 @@ export async function updateBudget(amount: number) {
     return { success: false };
   }
 }
+
+export async function resetData() {
+  await dbConnect();
+  try {
+    await Expense.deleteMany({});
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    console.error('Error resetting data:', error);
+    return { success: false };
+  }
+}

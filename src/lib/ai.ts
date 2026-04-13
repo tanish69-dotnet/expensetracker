@@ -11,15 +11,54 @@ export function calculateInsights(expenses: Expense[]): AIInsight[] {
   if (expenses.length === 0) {
     return [{
       type: 'info',
-      message: "Expanse AI initialized. Log your first expense to begin strategic analysis.",
-      recommendation: "Record a meal or bill to start training your advisor."
+      message: "Intelligence Engine Ready.",
+      recommendation: "Log your first transaction to initialize heuristic analysis."
     }];
   }
 
   const insightList: AIInsight[] = [];
   const total = expenses.reduce((sum, item) => sum + item.amount, 0);
   
-  // Category Analysis
+  // 1. ANOMALY DETECTION (Today vs 2x Avg)
+  const today = new Date().toISOString().split('T')[0];
+  const todaySpend = expenses.filter(e => e.date === today).reduce((s, e) => s + e.amount, 0);
+  
+  const dailyTotals = expenses.reduce((acc, e) => {
+    acc[e.date] = (acc[e.date] || 0) + e.amount;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const uniqueDates = Object.keys(dailyTotals).length;
+  const avgDailySpend = total / uniqueDates;
+
+  if (todaySpend > (avgDailySpend * 2) && todaySpend > 0) {
+    insightList.push({
+      type: 'warning',
+      message: `ANOMALY DETECTED: Spending is 2x above daily average.`,
+      recommendation: `Critical Alert: Unusual liquidity drift detected today ($${todaySpend.toFixed(2)}).`
+    });
+  }
+
+  // 2. SPENDING PREDICTION
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const totalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthlyExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const currentMonthTotal = monthlyExpenses.reduce((s, e) => s + e.amount, 0);
+  const predictedSpend = (currentMonthTotal / dayOfMonth) * totalDays;
+
+  if (predictedSpend > 1200) { // arbitrary threshold for warning
+     insightList.push({
+       type: 'warning',
+       message: `PREDICTION: At this rate, you will spend $${predictedSpend.toFixed(0)} this month.`,
+       recommendation: "Implementation Plan: Reduce non-essential velocity by 15% to maintain budget."
+     });
+  }
+
+  // 3. CATEGORY ANALYSIS & DOMINANCE
   const categoryTotals = expenses.reduce((acc, item) => {
     acc[item.category] = (acc[item.category] || 0) + item.amount;
     return acc;
@@ -29,50 +68,34 @@ export function calculateInsights(expenses: Expense[]): AIInsight[] {
   const [dominantCategory, dominantAmount] = sortedCategories[0];
   const dominantPercent = (dominantAmount / total) * 100;
 
-  // 1. Dominance Insight
-  if (dominantPercent > 40) {
-    insightList.push({
-      type: 'warning',
-      message: `${dominantCategory} represents ${dominantPercent.toFixed(0)}% of your spending.`,
-      recommendation: `Strategic Nudge: Try reducing ${dominantCategory} by 10% this week.`
-    });
-  }
-
-  // 2. Velocity/Burn Rate Insight
-  const uniqueDates = new Set(expenses.map(e => e.date)).size;
-  const avgPerDay = total / (uniqueDates || 1);
-
-  if (avgPerDay > 150) {
-    insightList.push({
-      type: 'warning',
-      message: `Strategic Alert: High daily burn rate detected ($${avgPerDay.toFixed(0)}/day).`,
-      recommendation: "Consider a 'No-Spend Day' tomorrow to reset your velocity."
-    });
-  } else if (avgPerDay < 50 && expenses.length > 5) {
-    insightList.push({
-      type: 'success',
-      message: "Efficiency Award! Your spending velocity is excellently controlled.",
-      recommendation: "Maintain this momentum to reach your monthly goals faster."
-    });
-  }
-
-  // 3. Category Specific Advice
-  if (categoryTotals['Food'] && categoryTotals['Food'] > (total * 0.3)) {
-     insightList.push({
-        type: 'info',
-        message: "Culinary Insight: Food is your primary driver.",
-        recommendation: "Prepping meals at home could save you roughly $50 per week."
-     });
-  }
-
-  // Fallback
-  if (insightList.length === 0) {
+  if (dominantPercent > 50) {
     insightList.push({
       type: 'info',
-      message: "Strategic analysis active. You are maintaining a standard spending profile.",
-      recommendation: "Keep logging to unlock deeper pattern recognition."
+      message: `${dominantCategory} represents ${dominantPercent.toFixed(0)}% of your total impact.`,
+      recommendation: `Strategy: Diversify spending to reduce ${dominantCategory} dominance.`
     });
   }
 
+  // 4. FINANCIAL PERSONALITY
+  const personality = calculatePersonality(expenses, categoryTotals, avgDailySpend);
+  insightList.push({
+    type: 'success',
+    message: `Financial Personality: ${personality}`,
+    recommendation: "Your spending profile has been successfully categorized by the Agentic Engine."
+  });
+
   return insightList;
+}
+
+function calculatePersonality(expenses: Expense[], totals: Record<string, number>, avg: number): string {
+  if (expenses.length < 3) return "Analyzing...";
+  
+  const mostExpensive = Object.entries(totals).sort(([, a], [, b]) => b - a)[0][0];
+  
+  if (mostExpensive === 'Food') return "Food Lover 🍔";
+  if (mostExpensive === 'Shopping') return "Impulse Spender 🛍️";
+  if (avg < 30) return "Smart Saver 💡";
+  if (mostExpensive === 'Travel') return "Globetrotter ✈️";
+  
+  return "Balanced Strategist ⚖️";
 }
